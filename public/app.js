@@ -112,7 +112,7 @@
 
   function showError(message, logs) {
     renderLogs(logs || [
-      { step: "Security", ok: false, message: "Input ditolak" }
+      { step: "Security", ok: false, message: "Input perlu dicek" }
     ]);
     els.errorText.textContent = message;
     els.errorBox.classList.add("show");
@@ -161,17 +161,68 @@
     return risky.some((keyword) => text.includes(keyword));
   }
 
-  function looksLikeRawSession(value) {
+  function parseJsonInput(value) {
     const text = String(value || "").trim();
-    if (!text.startsWith("{") && !text.startsWith("[")) return false;
+    if (!text.startsWith("{") && !text.startsWith("[")) return null;
 
     try {
-      const data = JSON.parse(text);
-      const serial = JSON.stringify(data).toLowerCase();
-      return serial.includes("expires") || serial.includes("user") || serial.includes("token") || serial.includes("session");
+      return JSON.parse(text);
     } catch (_) {
-      return false;
+      return null;
     }
+  }
+
+  function maskEmail(email) {
+    const text = String(email || "").trim();
+    const parts = text.split("@");
+    if (parts.length !== 2) return "";
+    const name = parts[0];
+    const domain = parts[1];
+    const visible = name.slice(0, Math.min(2, name.length));
+    return `${visible}${name.length > 2 ? "***" : "*"}@${domain}`;
+  }
+
+  function findEmail(value) {
+    if (!value || typeof value !== "object") return "";
+    const candidates = [
+      value.email,
+      value.user && value.user.email,
+      value.account && value.account.email,
+      value.profile && value.profile.email
+    ];
+    return candidates.find((item) => typeof item === "string" && item.includes("@")) || "";
+  }
+
+  function summarizeInput(value) {
+    const raw = String(value || "");
+    const parsed = parseJsonInput(raw);
+    const sensitive = hasSensitiveText(raw) || Boolean(parsed);
+
+    if (parsed) {
+      const email = maskEmail(findEmail(parsed));
+      return {
+        title: email ? `Session JSON ${email}` : "Session JSON diterima",
+        meta: "Token/cookie/session dibersihkan lokal",
+        sensitive: true,
+        isJson: true
+      };
+    }
+
+    if (sensitive) {
+      return {
+        title: "Input sensitif diterima",
+        meta: "Token/cookie/session dibersihkan lokal",
+        sensitive: true,
+        isJson: false
+      };
+    }
+
+    return {
+      title: normalizeTopic(raw),
+      meta: "Input non-sensitif",
+      sensitive: false,
+      isJson: false
+    };
   }
 
   function normalizeTopic(value) {
@@ -220,18 +271,11 @@
     els.generateBtn.querySelector("span").textContent = "Memproses...";
 
     window.setTimeout(() => {
+      const summary = summarizeInput(raw);
       const logs = [
-        { step: "Start", ok: true, message: "Membaca info akun" },
-        { step: "Security", ok: true, message: "Cek data sensitif" }
+        { step: "Start", ok: true, message: summary.isJson ? "JSON diterima" : "Membaca input" },
+        { step: "Security", ok: true, message: summary.sensitive ? "Token/session diabaikan" : "Input aman" }
       ];
-
-      if (hasSensitiveText(raw) || looksLikeRawSession(raw)) {
-        logs[1] = { step: "Security", ok: false, message: "Session/token terdeteksi" };
-        showError("Input terlihat berisi session JSON, cookie, token, atau data sensitif. Hapus data itu dulu. Website ini hanya menerima info non-sensitif yang terlihat di layar.", logs);
-        els.generateBtn.disabled = false;
-        els.generateBtn.querySelector("span").textContent = "Buat Link";
-        return;
-      }
 
       logs.push({ step: "Eligibility", ok: true, message: "Mode panduan aman aktif" });
       logs.push({ step: "Link", ok: true, message: "Share link dibuat" });
@@ -242,17 +286,18 @@
       els.linkDisplay.textContent = currentUrl;
       els.linkDisplay.classList.remove("revealed");
       els.resultBox.classList.add("show");
-      els.pendingMeta.textContent = "Link dibuat lokal - tidak ada pembayaran";
+      els.pendingMeta.textContent = summary.sensitive
+        ? "Link dibuat - token/session tidak masuk output"
+        : "Link dibuat lokal - tidak ada pembayaran";
 
       const stats = getStats();
       stats.total += 1;
       stats.success += 1;
       saveStats(stats);
 
-      const title = normalizeTopic(raw);
       saveHistory({
-        title,
-        meta: `Aman dibuat - ${new Date().toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}`
+        title: summary.title,
+        meta: `${summary.meta} - ${new Date().toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}`
       });
 
       els.generateBtn.disabled = false;

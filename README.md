@@ -2,7 +2,7 @@
 
 Static Cloudflare Pages site for a safe Indonesian GPT Plus promo-style link generator.
 
-This project intentionally does not collect ChatGPT session JSON, cookies, tokens, passwords, OTP codes, or payment credentials. It generates local share links and points users to official ChatGPT pages only.
+This project accepts free-form text or JSON locally, but it does not send, store, or include ChatGPT cookies, tokens, passwords, OTP codes, or payment credentials in generated links. It generates local share links and points users to official ChatGPT pages only.
 
 ## Local preview
 

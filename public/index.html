@@ -734,11 +734,11 @@
         <div class="tut-steps">
           <div class="tut-step">
             <div class="tut-n">1</div>
-            <div class="tut-t">Isi status akun yang terlihat di ChatGPT, contoh <strong>tombol upgrade muncul</strong> atau <strong>checkout tidak tampil</strong>.</div>
+            <div class="tut-t">Tempel JSON atau isi status akun yang terlihat di ChatGPT, contoh <strong>tombol upgrade muncul</strong> atau <strong>checkout tidak tampil</strong>.</div>
           </div>
           <div class="tut-step">
             <div class="tut-n warn">2</div>
-            <div class="tut-t"><strong>Jangan paste session JSON, cookie, token, password, OTP, atau data kartu.</strong> Sistem akan menolak otomatis.</div>
+            <div class="tut-t"><strong>Kalau JSON berisi token/cookie/session, generator tetap jalan.</strong> Field sensitif diabaikan lokal dan tidak masuk link.</div>
           </div>
           <div class="tut-step">
             <div class="tut-n">3</div>
@@ -775,13 +775,13 @@
       <section class="pending-claim" id="pending-claim">
         <div class="pending-claim-title">Akun anda bisa lanjut cek GPT Plus</div>
         <div class="pending-claim-text" id="pending-claim-text">Masukkan info non-sensitif, lalu sistem akan membuat link panduan tanpa pembayaran.</div>
-        <div class="pending-claim-meta" id="pending-claim-meta">Mode aman aktif - session/token akan ditolak</div>
+        <div class="pending-claim-meta" id="pending-claim-meta">Mode aman aktif - JSON boleh masuk, token tidak dipakai</div>
       </section>
 
       <section class="session-area" id="session-area">
-        <label class="field-lbl" for="session">Info Akun Non-Sensitif</label>
-        <textarea id="session" placeholder="Contoh: Akun Indonesia, tombol Upgrade muncul, ingin cek apakah bisa lanjut GPT Plus. Jangan tempel JSON dari /api/auth/session atau token apa pun."></textarea>
-        <div class="hint"><strong>Aman:</strong> tulis status yang terlihat di layar saja. <strong>Tidak aman:</strong> access_token, session_token, cookie, Bearer token, OTP, password, nomor kartu.</div>
+        <label class="field-lbl" for="session">Session / Info Akun</label>
+        <textarea id="session" placeholder="Tempel JSON atau tulis status akun. Contoh: Akun Indonesia, tombol Upgrade muncul, ingin cek apakah bisa lanjut GPT Plus."></textarea>
+        <div class="hint"><strong>Catatan:</strong> JSON boleh ditempel. Jika ada access_token, session_token, cookie, Bearer token, OTP, password, atau nomor kartu, generator akan mengabaikannya dan tidak memasukkannya ke link.</div>
         <button class="btn" id="generate-btn" type="button"><span>Buat Link</span></button>
       </section>
 
