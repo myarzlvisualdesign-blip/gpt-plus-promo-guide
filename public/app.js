@@ -1,152 +1,36 @@
 (function () {
   "use strict";
 
-  const storageKey = "gpt_plus_promo_guide_stats";
-  const officialPricingUrl = "https://chatgpt.com/#pricing";
-  const officialChatUrl = "https://chatgpt.com/";
+  const statsKey = "gpt_plus_safe_generator_stats";
+  const historyKey = "gpt_plus_safe_generator_history";
+  const officialUrl = "https://chatgpt.com/#pricing";
+
+  let currentUrl = "";
 
   const $ = (id) => document.getElementById(id);
-  const form = $("checkerForm");
-  const result = $("result");
-  const toast = $("toast");
-  const totalChecks = $("totalChecks");
-  const readyChecks = $("readyChecks");
-  const sharePage = $("sharePage");
-  const resetLocal = $("resetLocal");
-
-  function getStats() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(storageKey) || "{}");
-      return {
-        total: Number.isFinite(parsed.total) ? parsed.total : 0,
-        ready: Number.isFinite(parsed.ready) ? parsed.ready : 0
-      };
-    } catch (_) {
-      return { total: 0, ready: 0 };
-    }
-  }
-
-  function saveStats(stats) {
-    localStorage.setItem(storageKey, JSON.stringify(stats));
-    renderStats();
-  }
-
-  function renderStats() {
-    const stats = getStats();
-    totalChecks.textContent = String(stats.total);
-    readyChecks.textContent = String(stats.ready);
-  }
-
-  function showToast(message) {
-    toast.textContent = message;
-    toast.classList.add("show");
-    window.clearTimeout(showToast.timer);
-    showToast.timer = window.setTimeout(() => {
-      toast.classList.remove("show");
-    }, 2300);
-  }
-
-  function hasSensitiveText(value) {
-    const text = String(value || "").toLowerCase();
-    return [
-      "access_token",
-      "refresh_token",
-      "session_token",
-      "oauth",
-      "cookie",
-      "bearer ",
-      "eyj",
-      "password",
-      "otp",
-      "credit card",
-      "nomor kartu",
-      "cvv"
-    ].some((keyword) => text.includes(keyword));
-  }
-
-  function buildChecklist(data) {
-    const blockers = [];
-    const warnings = [];
-    const next = [];
-
-    if (!data.hasOfficialAccount) blockers.push("Login resmi chatgpt.com belum terkonfirmasi.");
-    if (!data.noSensitivePaste) blockers.push("Centang komitmen tidak menempel session/token dulu sebelum lanjut.");
-    if (!data.willUseOfficialCheckout) blockers.push("Pembayaran harus dilakukan di checkout resmi, bukan link pihak ketiga.");
-    if (hasSensitiveText(data.accountStatus)) blockers.push("Kolom status terlihat mengandung data sensitif. Hapus session, token, cookie, password, OTP, atau data kartu.");
-
-    if (data.payment === "unknown") warnings.push("Metode pembayaran belum jelas. Cek opsi yang muncul langsung di checkout resmi.");
-    if (data.country !== "indonesia") warnings.push("Lokasi akun berbeda dari Indonesia, jadi tampilan harga atau promo bisa berbeda.");
-    if (!data.accountStatus.trim()) warnings.push("Status akun belum diisi. Tambahkan apa yang terlihat di UI resmi agar checklist lebih jelas.");
-
-    if (blockers.length === 0) {
-      next.push("Buka halaman pricing resmi ChatGPT.");
-      next.push("Login ke akun sendiri dan cek apakah tombol Upgrade atau Plan tersedia.");
-      next.push("Lanjut hanya jika checkout resmi menampilkan metode pembayaran yang kamu kenal.");
-    } else {
-      next.push("Selesaikan item blocker dulu.");
-      next.push("Hapus data sensitif dari catatan sebelum menyalin atau membagikan checklist.");
-      next.push("Coba lagi dari halaman resmi ChatGPT setelah semua checklist aman.");
-    }
-
-    const ready = blockers.length === 0 && warnings.length <= 1;
-    const review = blockers.length === 0 && warnings.length > 1;
-    return { blockers, warnings, next, ready, review };
-  }
-
-  function renderResult(data, checklist) {
-    const className = checklist.ready ? "ready" : checklist.review ? "review" : "blocked";
-    const title = checklist.ready
-      ? "Akun terlihat siap dicek di halaman resmi"
-      : checklist.review
-        ? "Bisa lanjut, tapi ada catatan yang perlu dicek"
-        : "Jangan lanjut sebelum blocker aman";
-
-    const summary = [
-      `Lokasi: ${data.country === "indonesia" ? "Indonesia" : "Negara lain"}`,
-      `Pembayaran: ${data.paymentLabel}`,
-      `Status akun: ${data.accountStatus.trim() || "Belum diisi"}`
-    ].join("\n");
-
-    const issueItems = checklist.blockers.concat(checklist.warnings);
-    result.className = `result show ${className}`;
-    result.innerHTML = `
-      <h3>${escapeHtml(title)}</h3>
-      <p>${escapeHtml(checklist.ready ? "Checklist lokal sudah aman. Langkah berikutnya tetap harus dilakukan di chatgpt.com." : "Ada hal yang perlu diperbaiki sebelum membuka checkout resmi.")}</p>
-      <div class="link-preview">
-        <span>${escapeHtml(officialPricingUrl)}</span>
-      </div>
-      ${issueItems.length ? `<ul>${issueItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}
-      <ul>${checklist.next.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
-      <div class="actions">
-        <button type="button" id="copyChecklist">Salin checklist</button>
-        <a class="button-link secondary" href="${officialPricingUrl}" target="_blank" rel="noopener noreferrer">Buka pricing resmi</a>
-        <a class="button-link secondary" href="${officialChatUrl}" target="_blank" rel="noopener noreferrer">Buka ChatGPT</a>
-      </div>
-    `;
-
-    $("copyChecklist").addEventListener("click", () => {
-      const text = [
-        "GPT Plus Promo Guide - Checklist Aman",
-        "",
-        summary,
-        "",
-        "Catatan:",
-        ...(issueItems.length ? issueItems.map((item) => `- ${item}`) : ["- Tidak ada blocker utama."]),
-        "",
-        "Langkah berikut:",
-        ...checklist.next.map((item) => `- ${item}`),
-        "",
-        `Link resmi: ${officialPricingUrl}`
-      ].join("\n");
-
-      navigator.clipboard.writeText(text)
-        .then(() => showToast("Checklist disalin."))
-        .catch(() => showToast("Browser tidak mengizinkan copy otomatis."));
-    });
-  }
+  const els = {
+    input: $("session"),
+    generateBtn: $("generate-btn"),
+    statusBox: $("status-box"),
+    errorBox: $("error-box"),
+    errorText: $("error-text"),
+    resultBox: $("result-box"),
+    resultClose: $("result-close"),
+    linkDisplay: $("link-display"),
+    btnCopy: $("btn-copy"),
+    copyText: $("copy-text"),
+    btnOpen: $("btn-open"),
+    shareLaunch: $("share-launch"),
+    popup: $("share-popup"),
+    toast: $("toast"),
+    hsTotal: $("hs-total"),
+    hsSuccess: $("hs-success"),
+    accountsBox: $("accounts-box"),
+    pendingMeta: $("pending-claim-meta")
+  };
 
   function escapeHtml(value) {
-    return String(value)
+    return String(value || "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -154,50 +38,303 @@
       .replace(/'/g, "&#039;");
   }
 
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const payment = $("payment");
-    const data = {
-      country: $("country").value,
-      payment: payment.value,
-      paymentLabel: payment.options[payment.selectedIndex].textContent,
-      accountStatus: $("accountStatus").value,
-      hasOfficialAccount: $("hasOfficialAccount").checked,
-      noSensitivePaste: $("noSensitivePaste").checked,
-      willUseOfficialCheckout: $("willUseOfficialCheckout").checked
-    };
+  function getStats() {
+    try {
+      const data = JSON.parse(localStorage.getItem(statsKey) || "{}");
+      return {
+        total: Number.isFinite(data.total) ? data.total : 0,
+        success: Number.isFinite(data.success) ? data.success : 0
+      };
+    } catch (_) {
+      return { total: 0, success: 0 };
+    }
+  }
 
-    const checklist = buildChecklist(data);
-    renderResult(data, checklist);
+  function saveStats(stats) {
+    localStorage.setItem(statsKey, JSON.stringify(stats));
+    renderStats();
+  }
 
+  function renderStats() {
     const stats = getStats();
-    stats.total += 1;
-    if (checklist.ready) stats.ready += 1;
-    saveStats(stats);
-  });
+    els.hsTotal.textContent = String(stats.total);
+    els.hsSuccess.textContent = String(stats.success);
+  }
 
-  sharePage.addEventListener("click", () => {
-    const payload = {
-      title: "GPT Plus Promo Guide",
-      text: "Checklist aman upgrade GPT Plus tanpa paste session/token.",
-      url: window.location.href
-    };
+  function getHistory() {
+    try {
+      const items = JSON.parse(localStorage.getItem(historyKey) || "[]");
+      return Array.isArray(items) ? items.slice(0, 8) : [];
+    } catch (_) {
+      return [];
+    }
+  }
 
-    if (navigator.share) {
-      navigator.share(payload).catch(() => undefined);
+  function saveHistory(item) {
+    const items = [item].concat(getHistory()).slice(0, 8);
+    localStorage.setItem(historyKey, JSON.stringify(items));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const items = getHistory();
+    if (!items.length) {
+      els.accountsBox.classList.remove("show");
+      els.accountsBox.innerHTML = "";
       return;
     }
 
-    navigator.clipboard.writeText(window.location.href)
-      .then(() => showToast("Link halaman disalin."))
-      .catch(() => showToast("Tidak bisa menyalin link otomatis."));
-  });
+    els.accountsBox.innerHTML = [
+      '<div class="acc-title">Riwayat Link</div>',
+      ...items.map((item) => `
+        <div class="acc-row">
+          <div class="acc-main">${escapeHtml(item.title)}</div>
+          <div class="acc-meta">${escapeHtml(item.meta)}</div>
+        </div>
+      `)
+    ].join("");
+    els.accountsBox.classList.add("show");
+  }
 
-  resetLocal.addEventListener("click", () => {
-    localStorage.removeItem(storageKey);
-    renderStats();
-    showToast("Statistik lokal direset.");
+  function showToast(message) {
+    els.toast.textContent = message;
+    els.toast.classList.add("show");
+    window.clearTimeout(showToast.timer);
+    showToast.timer = window.setTimeout(() => {
+      els.toast.classList.remove("show");
+    }, 2300);
+  }
+
+  function hideError() {
+    els.errorBox.classList.remove("show");
+    els.errorText.textContent = "";
+  }
+
+  function showError(message, logs) {
+    renderLogs(logs || [
+      { step: "Security", ok: false, message: "Input ditolak" }
+    ]);
+    els.errorText.textContent = message;
+    els.errorBox.classList.add("show");
+    els.resultBox.classList.remove("show");
+  }
+
+  function renderLogs(logs) {
+    if (!Array.isArray(logs) || !logs.length) {
+      els.statusBox.classList.remove("show");
+      els.statusBox.innerHTML = "";
+      return;
+    }
+
+    els.statusBox.innerHTML = logs.map((log) => `
+      <div class="status-row ${log.ok ? "ok" : "fail"}">
+        <span class="status-name">${escapeHtml(log.step)}</span>
+        <span class="status-msg">${escapeHtml(log.message)}</span>
+      </div>
+    `).join("");
+    els.statusBox.classList.add("show");
+  }
+
+  function hasSensitiveText(value) {
+    const text = String(value || "").toLowerCase();
+    const risky = [
+      "access_token",
+      "refresh_token",
+      "session_token",
+      "id_token",
+      "csrf",
+      "cookie",
+      "set-cookie",
+      "bearer ",
+      "eyj",
+      "api/auth/session",
+      "authorization",
+      "password",
+      "passwd",
+      "otp",
+      "one-time",
+      "cvv",
+      "nomor kartu",
+      "credit card",
+      "card number"
+    ];
+    return risky.some((keyword) => text.includes(keyword));
+  }
+
+  function looksLikeRawSession(value) {
+    const text = String(value || "").trim();
+    if (!text.startsWith("{") && !text.startsWith("[")) return false;
+
+    try {
+      const data = JSON.parse(text);
+      const serial = JSON.stringify(data).toLowerCase();
+      return serial.includes("expires") || serial.includes("user") || serial.includes("token") || serial.includes("session");
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function normalizeTopic(value) {
+    const text = String(value || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!text) return "GPT Plus Indonesia";
+    return text.slice(0, 90);
+  }
+
+  function makeToken() {
+    const random = crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(2)) : [Date.now(), Math.random() * 100000];
+    return `sh_${Number(random[0]).toString(16)}_${Number(random[1]).toString(16)}`;
+  }
+
+  function buildSafeLink(token) {
+    const url = new URL(window.location.origin + window.location.pathname);
+    url.searchParams.set("share", token);
+    url.searchParams.set("mode", "safe");
+    return url.toString();
+  }
+
+  function buildShareText() {
+    return [
+      "GPT Plus Promo - link panduan aman",
+      "",
+      "Tanpa pembayaran, tanpa VPN Jepang, dan tidak perlu paste session/token.",
+      currentUrl
+    ].join("\n");
+  }
+
+  function generate() {
+    const raw = els.input.value.trim();
+    hideError();
+    els.resultBox.classList.remove("show");
+
+    if (!raw) {
+      showError("Isi info akun non-sensitif dulu sebelum buat link.", [
+        { step: "Input", ok: false, message: "Masih kosong" }
+      ]);
+      return;
+    }
+
+    els.generateBtn.disabled = true;
+    els.generateBtn.querySelector("span").textContent = "Memproses...";
+
+    window.setTimeout(() => {
+      const logs = [
+        { step: "Start", ok: true, message: "Membaca info akun" },
+        { step: "Security", ok: true, message: "Cek data sensitif" }
+      ];
+
+      if (hasSensitiveText(raw) || looksLikeRawSession(raw)) {
+        logs[1] = { step: "Security", ok: false, message: "Session/token terdeteksi" };
+        showError("Input terlihat berisi session JSON, cookie, token, atau data sensitif. Hapus data itu dulu. Website ini hanya menerima info non-sensitif yang terlihat di layar.", logs);
+        els.generateBtn.disabled = false;
+        els.generateBtn.querySelector("span").textContent = "Buat Link";
+        return;
+      }
+
+      logs.push({ step: "Eligibility", ok: true, message: "Mode panduan aman aktif" });
+      logs.push({ step: "Link", ok: true, message: "Share link dibuat" });
+      renderLogs(logs);
+
+      const token = makeToken();
+      currentUrl = buildSafeLink(token);
+      els.linkDisplay.textContent = currentUrl;
+      els.linkDisplay.classList.remove("revealed");
+      els.resultBox.classList.add("show");
+      els.pendingMeta.textContent = "Link dibuat lokal - tidak ada pembayaran";
+
+      const stats = getStats();
+      stats.total += 1;
+      stats.success += 1;
+      saveStats(stats);
+
+      const title = normalizeTopic(raw);
+      saveHistory({
+        title,
+        meta: `Aman dibuat - ${new Date().toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}`
+      });
+
+      els.generateBtn.disabled = false;
+      els.generateBtn.querySelector("span").textContent = "Buat Link";
+    }, 360);
+  }
+
+  function copyCurrentLink() {
+    if (!currentUrl) return;
+    navigator.clipboard.writeText(currentUrl)
+      .then(() => {
+        els.btnCopy.classList.add("copied");
+        els.copyText.textContent = "Tersalin";
+        showToast("Link disalin.");
+        window.setTimeout(() => {
+          els.btnCopy.classList.remove("copied");
+          els.copyText.textContent = "Salin";
+        }, 1800);
+      })
+      .catch(() => showToast("Browser tidak mengizinkan copy otomatis."));
+  }
+
+  function openCurrentLink() {
+    if (!currentUrl) return;
+    window.open(officialUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function closeResult() {
+    els.resultBox.classList.remove("show");
+  }
+
+  function openShareMenu() {
+    const shareUrl = currentUrl || buildSafeLink(makeToken());
+    const text = currentUrl ? buildShareText() : `GPT Plus Promo - generator aman\n${shareUrl}`;
+    els.popup.innerHTML = `
+      <div class="popup-card">
+        <div class="popup-title">Share Link</div>
+        <div class="popup-text">Bagikan link generator aman. Tidak ada pembayaran dan tidak meminta session/token.</div>
+        <div class="popup-link">${escapeHtml(shareUrl)}</div>
+        <div class="popup-actions">
+          <button class="btn-skip" type="button" id="popup-close">Tutup</button>
+          <button class="btn" type="button" id="popup-copy">Copy Link</button>
+        </div>
+      </div>
+    `;
+    els.popup.classList.add("show");
+    $("popup-close").addEventListener("click", closePopup);
+    $("popup-copy").addEventListener("click", () => {
+      navigator.clipboard.writeText(text)
+        .then(() => showToast("Share text disalin."))
+        .catch(() => showToast("Tidak bisa copy otomatis."));
+    });
+  }
+
+  function closePopup() {
+    els.popup.classList.remove("show");
+  }
+
+  function applyShareMode() {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("share");
+    if (!token) return;
+
+    currentUrl = window.location.href;
+    els.pendingMeta.textContent = `Share aktif: ${token}`;
+    els.input.value = "Saya membuka link share GPT Plus Promo dan ingin lanjut cek lewat panduan aman.";
+    renderLogs([
+      { step: "Share", ok: true, message: "Link share dibuka" },
+      { step: "Security", ok: true, message: "Tidak ada data akun dikirim" }
+    ]);
+  }
+
+  els.generateBtn.addEventListener("click", generate);
+  els.btnCopy.addEventListener("click", copyCurrentLink);
+  els.btnOpen.addEventListener("click", openCurrentLink);
+  els.resultClose.addEventListener("click", closeResult);
+  els.shareLaunch.addEventListener("click", openShareMenu);
+  els.popup.addEventListener("click", (event) => {
+    if (event.target === els.popup) closePopup();
   });
 
   renderStats();
+  renderHistory();
+  applyShareMode();
 })();

@@ -1,8 +1,8 @@
-# GPT Plus Promo Guide
+# GPT Plus Promo Link
 
-Static Cloudflare Pages site for a safe Indonesian GPT Plus promo and upgrade guide.
+Static Cloudflare Pages site for a safe Indonesian GPT Plus promo-style link generator.
 
-This project intentionally does not collect ChatGPT session JSON, cookies, tokens, passwords, or payment credentials. It only provides a local readiness checklist and links users to official ChatGPT pages.
+This project intentionally does not collect ChatGPT session JSON, cookies, tokens, passwords, OTP codes, or payment credentials. It generates local share links and points users to official ChatGPT pages only.
 
 ## Local preview
 
