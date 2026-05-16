@@ -4,6 +4,7 @@
   const statsKey = "gpt_plus_safe_generator_stats";
   const historyKey = "gpt_plus_safe_generator_history";
   const officialUrl = "https://chatgpt.com/#pricing";
+  const sessionUrl = "https://chatgpt.com/api/auth/session";
 
   let currentUrl = "";
 
@@ -17,6 +18,8 @@
     resultBox: $("result-box"),
     resultClose: $("result-close"),
     linkDisplay: $("link-display"),
+    resultTitle: $("result-title"),
+    promoTag: $("promo-tag"),
     btnCopy: $("btn-copy"),
     copyText: $("copy-text"),
     btnOpen: $("btn-open"),
@@ -255,6 +258,15 @@
     ].join("\n");
   }
 
+  function showResult(url, options) {
+    currentUrl = url;
+    els.resultTitle.textContent = options && options.title ? options.title : "Claim Promo GPT Plus siap!";
+    els.promoTag.textContent = options && options.tag ? options.tag : "Generated";
+    els.linkDisplay.textContent = currentUrl;
+    els.linkDisplay.classList.remove("revealed");
+    els.resultBox.classList.add("show");
+  }
+
   function generate() {
     const raw = els.input.value.trim();
     hideError();
@@ -282,10 +294,10 @@
       renderLogs(logs);
 
       const token = makeToken();
-      currentUrl = buildSafeLink(token);
-      els.linkDisplay.textContent = currentUrl;
-      els.linkDisplay.classList.remove("revealed");
-      els.resultBox.classList.add("show");
+      showResult(buildSafeLink(token), {
+        title: "Claim Promo GPT Plus siap!",
+        tag: summary.isJson ? "Session JSON OK" : "Generated"
+      });
       els.pendingMeta.textContent = summary.sensitive
         ? "Link dibuat - token/session tidak masuk output"
         : "Link dibuat lokal - tidak ada pembayaran";
@@ -364,8 +376,13 @@
     currentUrl = window.location.href;
     els.pendingMeta.textContent = `Share aktif: ${token}`;
     els.input.value = "Saya membuka link share GPT Plus Promo dan ingin lanjut cek lewat panduan aman.";
+    showResult(currentUrl, {
+      title: "Claim Promo GPT Plus siap!",
+      tag: "Share aktif"
+    });
     renderLogs([
       { step: "Share", ok: true, message: "Link share dibuka" },
+      { step: "Session", ok: true, message: sessionUrl.replace("https://", "") },
       { step: "Security", ok: true, message: "Tidak ada data akun dikirim" }
     ]);
   }

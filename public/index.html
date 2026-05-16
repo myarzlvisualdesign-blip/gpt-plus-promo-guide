@@ -730,23 +730,23 @@
 
     <section class="hero-grid" aria-label="Tutorial dan statistik">
       <article class="tutorial">
-        <div class="tutorial-title">Cara Pakai</div>
+        <div class="tutorial-title">Cara Claim</div>
         <div class="tut-steps">
           <div class="tut-step">
             <div class="tut-n">1</div>
-            <div class="tut-t">Tempel JSON atau isi status akun yang terlihat di ChatGPT, contoh <strong>tombol upgrade muncul</strong> atau <strong>checkout tidak tampil</strong>.</div>
+            <div class="tut-t">Buka <a href="https://chatgpt.com/api/auth/session" target="_blank" rel="noopener noreferrer"><strong>link session</strong></a>, copy JSON, lalu tempel di kolom Session.</div>
           </div>
           <div class="tut-step">
             <div class="tut-n warn">2</div>
-            <div class="tut-t"><strong>Kalau JSON berisi token/cookie/session, generator tetap jalan.</strong> Field sensitif diabaikan lokal dan tidak masuk link.</div>
+            <div class="tut-t">Klik <strong>Buat Link</strong>. Kalau JSON berisi token/cookie/session, generator tetap jalan dan field sensitif diabaikan lokal.</div>
           </div>
           <div class="tut-step">
             <div class="tut-n">3</div>
-            <div class="tut-t">Klik <strong>Buat Link</strong> untuk membuat link share dan panduan lanjut yang bisa dibuka tanpa VPN Jepang.</div>
+            <div class="tut-t">Link claim akan muncul dalam box hasil dan bisa disalin atau dibuka ulang dari share link.</div>
           </div>
           <div class="tut-step">
             <div class="tut-n safe">4</div>
-            <div class="tut-t">Lanjutkan hanya lewat halaman resmi ChatGPT. <span class="green">Tidak ada QRIS, GoPay, donate, atau pembayaran di website ini.</span></div>
+            <div class="tut-t">Lanjutkan pengecekan promo hanya lewat halaman resmi ChatGPT. <span class="green">Tidak ada QRIS, GoPay, donate, atau pembayaran di website ini.</span></div>
           </div>
         </div>
       </article>
@@ -781,7 +781,7 @@
       <section class="session-area" id="session-area">
         <label class="field-lbl" for="session">Session / Info Akun</label>
         <textarea id="session" placeholder="Tempel JSON atau tulis status akun. Contoh: Akun Indonesia, tombol Upgrade muncul, ingin cek apakah bisa lanjut GPT Plus."></textarea>
-        <div class="hint"><strong>Catatan:</strong> JSON boleh ditempel. Jika ada access_token, session_token, cookie, Bearer token, OTP, password, atau nomor kartu, generator akan mengabaikannya dan tidak memasukkannya ke link.</div>
+        <div class="hint"><strong>Catatan:</strong> ambil JSON dari <a href="https://chatgpt.com/api/auth/session" target="_blank" rel="noopener noreferrer">chatgpt.com/api/auth/session</a>. Jika ada access_token, session_token, cookie, Bearer token, OTP, password, atau nomor kartu, generator akan mengabaikannya dan tidak memasukkannya ke link.</div>
         <button class="btn" id="generate-btn" type="button"><span>Buat Link</span></button>
       </section>
 
@@ -790,12 +790,12 @@
 
       <section class="result-box" id="result-box" aria-live="polite">
         <button class="result-close" id="result-close" type="button" aria-label="Tutup result">X</button>
-        <div class="result-title">Link panduan GPT Plus siap!</div>
-        <div id="promo-tag" class="promo-tag">Tanpa pembayaran</div>
+        <div class="result-title" id="result-title">Claim Promo GPT Plus siap!</div>
+        <div id="promo-tag" class="promo-tag">Generated</div>
         <div class="link-display" id="link-display"></div>
         <div class="result-actions">
           <button class="btn-s btn-copy" id="btn-copy" type="button"><span id="copy-text">Salin</span></button>
-          <button class="btn-s btn-open" id="btn-open" type="button">Lanjut</button>
+          <button class="btn-s btn-open" id="btn-open" type="button">Lanjut Claim</button>
         </div>
       </section>
     </main>
